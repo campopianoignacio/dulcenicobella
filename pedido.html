@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Pedido - Dulce Nicobella</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="is-rendering">
+
+    <!-- ======== HEADER ======== -->
+    <header>
+        <div class="header-container">
+            <a href="index.html" class="logo">Dulce Nicobella</a>
+            <a href="pedido.html" class="cart-icon-link" aria-label="Ver carrito">
+                <svg class="cart-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 6h13l-1.5 9h-9L6 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="20" r="1" fill="currentColor"/>
+                    <circle cx="18" cy="20" r="1" fill="currentColor"/>
+                </svg>
+                <span id="cart-badge" class="cart-badge">0</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- ======== FORMULARIO DE PEDIDO ======== -->
+        <section id="formulario-pedido">
+            <h2>Confirmá tu Pedido</h2>
+            <form id="order-form">
+                
+                <!-- Lista de productos en el pedido -->
+                <div id="lista-pedido">
+                    <h3>Tu selección:</h3>
+                    <ul id="pedido-items">
+                        <!-- Items del pedido se cargarán aquí desde localStorage -->
+                    </ul>
+                    <div id="order-total-container">
+                        <!-- El total del pedido se mostrará aquí -->
+                    </div>
+                </div>
+
+                <!-- Campos de datos del cliente -->
+                <div class="form-group">
+                    <label for="cliente-nombre">Nombre Completo *</label>
+                    <input type="text" id="cliente-nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente-email">Email <small class="optional">(opcional)</small></label>
+                    <input type="email" id="cliente-email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cliente-telefono">Teléfono (WhatsApp) *</label>
+                    <input type="tel" id="cliente-telefono" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente-fecha">Fecha de Entrega Deseada *</label>
+                    <input type="date" id="cliente-fecha" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente-comentarios">Comentarios Adicionales</label>
+                    <textarea id="cliente-comentarios" placeholder="Ej: 'La torta de bodas con flores rosadas', 'Alergia a las nueces', etc."></textarea>
+                </div>
+                
+                <div class="form-group image-upload-group">
+                    <label>Imagen de Referencia (opcional)</label>
+                    <div class="image-uploader">
+                        <input type="file" id="cliente-imagen" accept="image/*" aria-label="Subir imagen de referencia" multiple />
+                        <label for="cliente-imagen" class="upload-btn" title="Adjuntar imagen (opcional)" role="button" tabindex="0" aria-label="Adjuntar imagen (opcional)">
+                            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                <path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/>
+                            </svg>
+                        </label>
+                        <div id="cliente-imagen-preview" class="img-preview" aria-hidden="true"></div>
+                    </div>
+                </div>
+
+                <!-- Botón de envío -->
+                <button type="submit" id="submit-pedido">Enviar Pedido por WhatsApp</button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- ======== FOOTER ======== -->
+    <footer>
+        <div class="container">
+            <p>Seguinos en nuestras redes o contactanos por Whatsapp</p>
+            <div class="social-links">
+                <a href="https://www.instagram.com/merces_nicobella/" target="_blank" rel="noopener noreferrer" title="Instagram"><img src="images/Instagram_icon.png" alt="Instagram" class="social-icon"></a>
+                <a href="https://www.facebook.com/DulceNicobella" target="_blank" rel="noopener noreferrer" title="Facebook"><img src="images/Facebook_icon.png" alt="Facebook" class="social-icon"></a>
+                <a href="https://wa.me/5493456256330?text=Hola%21%20Quisiera%20hacer%20un%20pedido.%20%C2%BFMe%20pueden%20ayudar%3F" target="_blank" rel="noopener noreferrer" title="Whatsapp" aria-label="Abrir chat de Whatsapp con mensaje predefinido"><img src="images/Whatsapp_icon.png" alt="Whatsapp" class="social-icon"></a>
+            </div>
+            <p>&copy; 2025 Dulce Nicobella. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- ======== MODAL DE CONFIRMACIÓN ======== -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Título del Modal</h2>
+            <p id="modal-message">Aquí va el mensaje de confirmación.</p>
+        </div>
+    </div>
+
+    <!-- ======== MODAL DE PRODUCTO (detalle) ======== -->
+    <div id="product-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close-btn product-close" aria-label="Cerrar producto">&times;</button>
+            <div id="product-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- ======== MODAL DE PEDIDO (order) ======== -->
+    <div id="order-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <button class="close-btn order-close" aria-label="Cerrar pedido">&times;</button>
+            <div id="order-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- ======== CONTENEDOR DE NOTIFICACIONES TOAST ======== -->
+    <div id="toast-container"></div>
+
+    <!-- ======== SCRIPT PARA LA PÁGINA DE PEDIDO ======== -->
+    <script src="pedido.js"></script>
+    <script src="transitions.js" defer></script>
+
+</body>
+</html>
