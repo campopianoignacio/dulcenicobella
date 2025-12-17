@@ -189,55 +189,6 @@ header .logo {
     object-fit: cover;
 }
 
-/* Contenedor de preview que aparece al hover */
-.hover-preview {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 200px; /* coincide con la altura de .product-card img */
-    border-radius: 0 0 12px 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    background: var(--white-color);
-    opacity: 0;
-    transition: opacity 200ms ease, transform 200ms ease;
-    display: none;
-    z-index: 10;
-}
-.hover-preview.show {
-    display: block;
-    opacity: 1;
-}
-.hover-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* Variante pequeña (esquina) para previews de productos que usen una miniatura */
-.hover-preview.small {
-    width: 160px;
-    height: 120px;
-    top: 12px;
-    right: 12px;
-    left: auto;
-    border-radius: 12px;
-    border-bottom: none;
-}
-
-.hover-preview.small.show {
-    display: block;
-    opacity: 1;
-    transform: none;
-}
-
-@media (max-width: 600px) {
-    .hover-preview { display: none; }
-}
-
 .product-card-content {
     padding: 20px;
     flex-grow: 1;
@@ -752,4 +703,84 @@ html.is-rendering, body.is-rendering {
 }
 html, body {
     will-change: opacity;
+}
+
+/* ======== ESTILOS DE LA GALERÍA DE IMÁGENES ======== */
+.gallery-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px; /* O el tamaño que prefieras */
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.gallery-main-image {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Para una relación de aspecto 1:1, ajústalo si tus imágenes son diferentes */
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    overflow: hidden; /* Oculta las imágenes que se salen del contenedor */
+}
+
+.gallery-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Transición de deslizamiento */
+}
+
+.gallery-image {
+    /* Cada imagen debe ocupar una fracción del track total */
+    width: calc(100% / var(--image-count, 1));
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    -webkit-tap-highlight-color: transparent; /* Evita el flash en móviles */
+}
+
+.gallery-nav:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.gallery-nav.prev {
+    left: 10px;
+}
+
+.gallery-nav.next {
+    right: 10px;
+}
+
+.gallery-counter {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
 }

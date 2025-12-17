@@ -41,6 +41,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // --- GALERÍA DE IMÁGENES ---
+    function renderImageGallery(container, product) {
+        const storedImages = JSON.parse(localStorage.getItem(`productImages_${product.id}`) || '[]');
+        const images = storedImages.length > 0 ? storedImages : [product.image]; // Fallback a la imagen principal
+        
+        if (!container) return;
+
+        let currentIndex = 0;
+
+        const imagesHtml = images.map(imgSrc => `<img src="${imgSrc}" alt="${product.name}" class="gallery-image">`).join('');
+
+        container.innerHTML = `
+            <div class="gallery-container">
+                <div class="gallery-main-image">
+                    <div class="gallery-track" style="width: ${images.length * 100}%; --image-count: ${images.length};">
+                        ${imagesHtml}
+                    </div>
+                </div>
+                ${images.length > 1 ? `
+                    <button class="gallery-nav prev" aria-label="Imagen anterior">‹</button>
+                    <button class="gallery-nav next" aria-label="Siguiente imagen">›</button>
+                ` : ''}
+                ${images.length > 1 ? `<div class="gallery-counter">${currentIndex + 1} / ${images.length}</div>` : ''}
+            </div>
+        `;
+
+        const track = container.querySelector('.gallery-track');
+        const counter = container.querySelector('.gallery-counter');
+
+        function updateImage(index) {
+            currentIndex = index;
+            const offset = -currentIndex * (100 / images.length);
+            if (track) track.style.transform = `translateX(${offset}%)`;
+            if (counter) counter.textContent = `${currentIndex + 1} / ${images.length}`;
+        }
+
+        container.querySelector('.next')?.addEventListener('click', () => {
+            const nextIndex = (currentIndex + 1) % images.length;
+            updateImage(nextIndex);
+        });
+
+        container.querySelector('.prev')?.addEventListener('click', () => {
+            const prevIndex = (currentIndex - 1 + images.length) % images.length;
+            updateImage(prevIndex);
+        });
+    }
+
     // Use shared renderer when available (DRY)
     if (window.renderProductTo) {
         window.renderProductTo(detail, product.id);
@@ -55,21 +102,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="product-price-detail">${( '$' + product.price.toLocaleString('es-AR') )}</div>
                     <p>${product.description}</p>
                     <div class="product-controls">
-                        <input id="detail-qty" type="number" min="1" value="1">
-                        <button id="detail-add" class="add-to-cart-btn">Agregar al carrito</button>
+                        <input id="modal-qty" type="number" min="1" value="1">
+                        <button id="modal-add" class="add-to-cart-btn">Agregar al carrito</button>
                     </div>
                     <p><a href="index.html">Volver al catálogo</a></p>
                 </div>
             </div>
         `;
     }
-
-    // The shared renderer `renderProductTo` now attaches its own event handler
-    // which calls `addToOrder` and handles toast/animations.
-    // We just need to ensure the button exists and the handler is attached.
-    if (window.renderProductTo) {
-        window.renderProductTo(detail, product.id);
-    }
+    
+    // Render the gallery into the media container
+    renderImageGallery(detail.querySelector('.product-detail-media'), product);
 
     updateCartBadge();
 });

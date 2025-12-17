@@ -16,9 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return JSON.parse(localStorage.getItem('dulceNicobellaOrder')) || [];
     }
 
-    // --- HOVER PREVIEW: Buscar imagen JPG correspondiente y mostrarla en la tarjeta ---
-    const hoverImageCache = {}; // productId -> { url|null }
-
     function slugify(text) {
         return normalizeText(text)
             .replace(/[^a-z0-9]+/g, '-')
@@ -34,148 +31,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function findHoverImage(product) {
-        if (hoverImageCache[product.id] !== undefined) return hoverImageCache[product.id];
-        // Prefer JPG/JPEG images only. Try converting product.image to .jpg first.
+    // --- Find all images for a product for the gallery view ---
+    async function findAllProductImages(product) {
+        const foundImages = [];
+        const extensions = ['.jpg', '.jpeg', '.jfif', '.webp', '.png'];
+
+        // This function was previously removed, re-implementing it.
+        // It will find all images for a product to be displayed in the gallery.
+
+        // Use the same robust logic as findHoverImage
+        const baseNames = new Set();
         if (product.image) {
-            // attempt to replace extension with .jpg and .jpeg
-            const jpgCandidate = product.image.replace(/\.[^.]+$/, '.jpg');
-            const jpegCandidate = product.image.replace(/\.[^.]+$/, '.jpeg');
-            // eslint-disable-next-line no-await-in-loop
-            if (await checkImageExists(jpgCandidate)) {
-                hoverImageCache[product.id] = jpgCandidate;
-                return jpgCandidate;
-            }
-            // eslint-disable-next-line no-await-in-loop
-            if (await checkImageExists(jpegCandidate)) {
-                hoverImageCache[product.id] = jpegCandidate;
-                return jpegCandidate;
-            }
+            baseNames.add(product.image.replace(/^images\//, '').replace(/\.svg$/, ''));
         }
+        baseNames.add(slugify(product.name));
 
-        const baseFull = slugify(product.name);
-        const baseShort = slugify((product.name.match(/^[^\s]+/) || [product.name])[0]);
-
-        // Build token-based variants removing common stopwords and counts (e.g. "de", "surtido", "x6")
-        const rawTokens = normalizeText(product.name)
-            .replace(/\(.+?\)/g, '') // remove parenthesis content
-            .split(/[^a-z0-9]+/)
-            .filter(Boolean);
-
-        const stopwords = new Set(['de','del','la','las','los','el','y','con','para','por','surtido','pack','x','x6','x4','x8','x12']);
-        const tokensFiltered = rawTokens.filter(t => !stopwords.has(t));
-
-        const candidates = [
-            // direct fullname variants
-            `images/${baseFull}.jpg`,
-            `images/${baseFull}1.jpg`,
-            `images/${baseFull}-1.jpg`,
-            `images/${baseFull}.jpeg`,
-            // short name variants
-            `images/${baseShort}.jpg`,
-            `images/${baseShort}1.jpg`,
-            `images/${baseShort}-1.jpg`,
-            `images/${baseShort}.jpeg`,
-        ];
-
-        // Add token combinations (join filtered tokens) and last-two token variants
-        if (tokensFiltered.length > 0) {
-            const joined = tokensFiltered.join('-');
-            candidates.push(`images/${joined}.jpg`, `images/${joined}1.jpg`, `images/${joined}.jpeg`);
-            if (tokensFiltered.length >= 2) {
-                const lastTwo = tokensFiltered.slice(-2).join('-');
-                candidates.push(`images/${lastTwo}.jpg`, `images/${lastTwo}1.jpg`, `images/${lastTwo}.jpeg`);
+        for (const base of baseNames) {
+            // Check for base image (e.g., postre-chaja.jpg)
+            for (const ext of extensions) {
+                const url = `images/${base}${ext}`;
+                // eslint-disable-next-line no-await-in-loop
+                if (await checkImageExists(url) && !foundImages.includes(url)) {
+                    foundImages.push(url);
+                }
+            }
+            // Check for numbered images (e.g., postre-chaja-2.jpg)
+            for (let i = 2; i <= 10; i++) {
+                for (const ext of extensions) {
+                    const url = `images/${base}-${i}${ext}`;
+                    // eslint-disable-next-line no-await-in-loop
+                    if (await checkImageExists(url) && !foundImages.includes(url)) {
+                        foundImages.push(url);
+                    }
+                }
             }
         }
-
-        for (const c of candidates) {
-            // eslint-disable-next-line no-await-in-loop
-            const exists = await checkImageExists(c);
-            if (exists) {
-                hoverImageCache[product.id] = c;
-                return c;
-            }
-        }
-
-        // No JPG/JPEG found
-        hoverImageCache[product.id] = null;
-        return null;
-    }
-
-    function attachHoverPreview(card, product) {
-        const previewContainer = card.querySelector('.hover-preview');
-        if (!previewContainer) return;
-        let currentUrl = null;
-
-        // Always use full overlay preview to cover the product image area
-        previewContainer.classList.remove('small');
-
-        card.addEventListener('mouseenter', async () => {
-            const url = await findHoverImage(product);
-            if (!url) return;
-            currentUrl = url;
-            const img = previewContainer.querySelector('img');
-            img.src = url;
-            previewContainer.classList.add('show');
-            // Dim main image for clarity
-            const mainImg = card.querySelector('img');
-            if (mainImg) mainImg.style.opacity = '0.15';
-        });
-
-        card.addEventListener('mouseleave', () => {
-            if (previewContainer) {
-                previewContainer.classList.remove('show');
-                const img = previewContainer.querySelector('img');
-                img.src = '';
-                currentUrl = null;
-            }
-            const mainImg = card.querySelector('img');
-            if (mainImg) mainImg.style.opacity = '';
-        });
-    }
-
-    function saveOrder(order) {
-        localStorage.setItem('dulceNicobellaOrder', JSON.stringify(order));
-    }
-
-    function updateCartBadge() {
-        const order = getOrder();
-        const totalItems = order.reduce((sum, item) => sum + item.quantity, 0);
-        if (cartBadge) {
-            cartBadge.textContent = totalItems;
-            if (totalItems > 0) {
-                cartBadge.classList.add('active');
-            } else {
-                cartBadge.classList.remove('active');
-            }
-        }
-    }
-
-    function addToOrder(productId, quantity) {
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
-
-        let order = getOrder();
-        const existingOrderItem = order.find(item => item.id === productId);
-
-        if (existingOrderItem) {
-            existingOrderItem.quantity += quantity;
-        } else {
-            order.push({ ...product, quantity });
-        }
-        
-        saveOrder(order);
-        updateCartBadge();
-        
-        // Animación del carrito
-        const cartIcon = document.querySelector('.cart-icon-link');
-        if (cartIcon) {
-            cartIcon.classList.add('shake');
-            setTimeout(() => cartIcon.classList.remove('shake'), 500);
-        }
-
-        // Mensaje minimalista
-        showToast('Agregado');
+        return foundImages;
     }
 
     // --- FUNCIÓN PARA FORMATEAR PRECIOS ---
@@ -237,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.className = 'product-card';
                         card.innerHTML = `
                             <img src="${product.image}" alt="${product.name}">
-                            <div class="hover-preview" aria-hidden="true"><img src="" alt="Vista previa"></div>
                         <div class="product-card-content">
                             <h3>${product.name}</h3>
                             <div class="product-price">${formatPrice(product.price)}</div>
@@ -249,14 +139,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                     // Make card clickable to open product detail (ignore clicks on controls)
-                    card.addEventListener('click', (ev) => {
+                    card.addEventListener('click', async (ev) => {
                         if (ev.target.closest('.add-to-cart-btn') || ev.target.closest('.product-quantity')) return;
-                        window.location.href = `product.html?id=${product.id}`;
+                        
+                        // Find all images and store them for the product page
+                        const galleryImages = await findAllProductImages(product);
+                        localStorage.setItem(`productImages_${product.id}`, JSON.stringify(galleryImages));
+
+                        // Apply fade-out transition before navigating
+                        const href = `product.html?id=${product.id}`;
+                        document.body.classList.add('is-rendering');
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 280); // 280ms to match CSS transition
                     });
 
                     categoryGrid.appendChild(card);
-                    // Attach hover handlers to show preview image if available
-                    attachHoverPreview(card, product);
                 });
                 productGrid.appendChild(categoryGrid);
             }
@@ -343,12 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use shared renderer to populate modal body
         if (window.renderProductTo) {
             window.renderProductTo(productModalBody, productId);
-
-            // Attach event listener to the newly rendered button
-            const addBtn = productModalBody.querySelector('#modal-add');
-            if (addBtn) {
-                addBtn.addEventListener('click', () => { const qty = parseInt(document.getElementById('modal-qty').value) || 1; if (qty > 0) { addToOrder(productId, qty); closeModal(productModal); } }, { once: true });
-            }
         }
 
         openModal(productModal);
@@ -374,21 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-
-        // Attach listener to the add button
-        const addButton = container.querySelector('#modal-add');
-        if (addButton) {
-            addButton.addEventListener('click', () => {
-                const qtyInput = container.querySelector('#modal-qty');
-                const quantity = parseInt(qtyInput.value) || 1;
-                if (quantity > 0) {
-                    addToOrder(product.id, quantity);
-                    // If inside a modal, close it
-                    const parentModal = container.closest('.modal');
-                    if (parentModal) closeModal(parentModal);
-                }
-            });
-        }
     };
 
     window.renderOrderTo = function(container) {
