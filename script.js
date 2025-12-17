@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function addToOrder(productId, quantity) {
+    window.addToOrder = function(productId, quantity) {
         const product = products.find(p => p.id === productId);
         if (!product) return;
 
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => cartIcon.classList.remove('shake'), 500);
         }
         showToast('Agregado');
-    }
+    };
 
     function slugify(text) {
         return normalizeText(text)
@@ -108,9 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNCIÓN PARA FORMATEAR PRECIOS ---
-    function formatPrice(price) {
+    window.formatPrice = function(price) {
         return `$${price.toLocaleString('es-AR')}`;
-    }
+    };
 
     // --- FUNCIÓN PARA NORMALIZAR TEXTO (quitar tildes y a minúsculas) ---
     function normalizeText(text) {
@@ -165,10 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const card = document.createElement('div');
                     card.className = 'product-card';
                         card.innerHTML = `
-                            <img src="${product.image}" alt="${product.name}">
+                            <img src="${product.image.replace('.svg', '.jfif')}" alt="${product.name}" loading="lazy" width="300" height="200">
                         <div class="product-card-content">
                             <h3>${product.name}</h3>
-                            <div class="product-price">${formatPrice(product.price)}</div>
+                            <div class="product-price">${window.formatPrice(product.price)}</div>
                             <p>${product.description}</p>
                             <div class="product-controls">
                                 <input type="number" id="qty-${product.id}" value="1" min="1" class="product-quantity">
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const quantityInput = document.getElementById(`qty-${productId}`);
                 const quantity = parseInt(quantityInput.value);
                 if (quantity > 0) {
-                    addToOrder(productId, quantity);
+                    window.addToOrder(productId, quantity);
                 }
             }
         });
@@ -291,15 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = `
             <div class="product-detail-grid">
                 <div class="product-detail-media">
-                    <img src="${product.image}" alt="${product.name}">
+                    <img src="${product.image.replace('.svg', '.jfif')}" alt="${product.name}" loading="lazy" width="500" height="500">
                 </div>
                 <div class="product-detail-info">
                     <h1 id="product-modal-title">${product.name}</h1>
-                    <div class="product-price-detail">${formatPrice(product.price)}</div>
+                    <div class="product-price-detail">${window.formatPrice(product.price)}</div>
                     <p>${product.description}</p>
                     <div class="product-controls">
-                        <input id="modal-qty" type="number" min="1" value="1">
-                        <button id="modal-add" class="add-to-cart-btn">Agregar al carrito</button>
+                        <input id="detail-qty" type="number" min="1" value="1">
+                        <button id="detail-add" class="add-to-cart-btn">Agregar al carrito</button>
                     </div>
                 </div>
             </div>
@@ -314,17 +314,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const itemsHtml = order.map(item => `
-            <li data-id="${item.id}">
-                <span>${item.name} x <input class="order-qty" data-id="${item.id}" type="number" min="1" value="${item.quantity}"></span>
-                <span>${formatPrice(item.price * item.quantity)}</span>
+            <li data-id="${item.id}" class="cart-item">
+                <img src="${item.image.replace('.svg', '.jfif')}" alt="${item.name}" class="cart-item-thumbnail" loading="lazy" width="60" height="60">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-controls">
+                        <input class="order-qty" data-id="${item.id}" type="number" min="1" value="${item.quantity}" aria-label="Cantidad de ${item.name}">
+                        <span class="cart-item-price">${window.formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                </div>
                 <button class="remove-item" data-id="${item.id}" aria-label="Eliminar item">✕</button>
             </li>
         `).join('');
         const total = order.reduce((s,i) => s + i.price * i.quantity, 0);
         container.innerHTML = `
             <h2 id="order-modal-title">Tu Pedido</h2>
-            <ul id="order-items" style="list-style:none;padding:0;">${itemsHtml}</ul>
-            <div style="margin-top:12px;font-weight:bold;">Total: ${formatPrice(total)}</div>
+            <ul id="order-items">${itemsHtml}</ul>
+            <div style="margin-top:12px;font-weight:bold;">Total: ${window.formatPrice(total)}</div>
             <div style="margin-top:16px;display:flex;gap:8px;">
                 <button id="send-order" class="add-to-cart-btn">Enviar Pedido por WhatsApp</button>
                 <a href="pedido.html">Ir a página de pedido</a>
@@ -336,10 +342,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.shareOrderViaWhatsapp = function(order, additionalText = '') {
         if (!order || order.length === 0) return;
 
-        const lines = order.map(i => `${i.quantity} x ${i.name} - ${formatPrice(i.price * i.quantity)}`).join('\n');
+        const lines = order.map(i => `${i.quantity} x ${i.name} - ${window.formatPrice(i.price * i.quantity)}`).join('\n');
         const total = order.reduce((s, i) => s + i.price * i.quantity, 0);
 
-        let text = `Hola! Quisiera hacer un pedido:\n${lines}\nTotal: ${formatPrice(total)}`;
+        let text = `Hola! Quisiera hacer un pedido:\n${lines}\nTotal: ${window.formatPrice(total)}`;
         if (additionalText) text += '\n\n' + additionalText;
 
         const whatsappUrl = `https://wa.me/5493456256330?text=${encodeURIComponent(text)}`;
@@ -436,6 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = order.find(i => i.id === id);
                 if (item) item.quantity = quantity;
                 saveOrder(order);
+                // Re-render para actualizar el total y el subtotal del item
+                // No es lo más eficiente, pero es simple y efectivo para este caso.
+                // Una mejora sería solo actualizar los textos de precio.
                 if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
                 updateCartBadge();
             }

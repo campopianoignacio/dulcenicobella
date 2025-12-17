@@ -80,24 +80,25 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gotoLink) gotoLink.remove();
         } else {
             // Fallback al renderizado local (shouldn't usually happen)
-            orderItemsList.innerHTML = '';
-            orderTotalContainer.innerHTML = '';
-            let total = 0;
-            order.forEach(item => {
-                const listItem = document.createElement('li');
-                const subtotal = item.quantity * item.price;
-                total += subtotal;
-                listItem.innerHTML = `
-                    <span>${item.quantity} x ${item.name}</span>
-                    <span>${formatPrice(subtotal)}</span>
-                    <button class="remove-item-btn" data-id="${item.id}">X</button>
-                `;
-                orderItemsList.appendChild(listItem);
-            });
+            const itemsHtml = order.map(item => `
+                <li data-id="${item.id}" class="cart-item">
+                    <img src="${item.image.replace('.svg', '.jfif')}" alt="${item.name}" class="cart-item-thumbnail" loading="lazy" width="60" height="60">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-controls">
+                            <input class="order-qty" data-id="${item.id}" type="number" min="1" value="${item.quantity}" aria-label="Cantidad de ${item.name}">
+                            <span class="cart-item-price">${formatPrice(item.price * item.quantity)}</span>
+                        </div>
+                    </div>
+                    <button class="remove-item" data-id="${item.id}" aria-label="Eliminar item">✕</button>
+                </li>
+            `).join('');
+            const total = order.reduce((s,i) => s + i.price * i.quantity, 0);
+            orderItemsList.innerHTML = itemsHtml;
             const totalElement = document.createElement('div');
             totalElement.className = 'order-total';
             totalElement.innerHTML = `<strong>Total del Pedido:</strong> <span>${formatPrice(total)}</span>`;
-            orderTotalContainer.appendChild(totalElement);
+            orderTotalContainer.innerHTML = totalElement.outerHTML;
         }
 
         // Adjuntar manejadores a los elementos renderizados (el renderer global no los incluye)
