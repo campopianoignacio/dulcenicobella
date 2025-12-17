@@ -129,12 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sendBtn) {
             sendBtn.addEventListener('click', () => {
                 const ord = getOrder();
-                if (!ord.length) return;
-                const lines = ord.map(i => `${i.quantity} x ${i.name} - ${formatPrice(i.price * i.quantity)}`).join('\n');
-                const total = ord.reduce((s,i) => s + i.price * i.quantity, 0);
-                const text = `Hola! Quisiera hacer un pedido:\n${lines}\nTotal: ${formatPrice(total)}`;
-                const whatsappUrl = `https://wa.me/5493456256330?text=${encodeURIComponent(text)}`;
-                shareOrderWithImages(text, whatsappUrl);
+                // Use the global share function
+                if (window.shareOrderViaWhatsapp) window.shareOrderViaWhatsapp(ord);
             });
         }
     }

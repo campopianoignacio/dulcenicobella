@@ -339,28 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function openProductModal(productId) {
         const product = products.find(p => p.id === productId);
         if (!product || !productModalBody) return;
+
         // Use shared renderer to populate modal body
         if (window.renderProductTo) {
             window.renderProductTo(productModalBody, productId);
-        } else {
-            productModalBody.innerHTML = `
-                <div class="product-detail-grid">
-                    <div class="product-detail-media">
-                        <img src="${product.image}" alt="${product.name}">
-                    </div>
-                    <div class="product-detail-info">
-                        <h1 id="product-modal-title">${product.name}</h1>
-                        <div class="product-price-detail">${formatPrice(product.price)}</div>
-                        <p>${product.description}</p>
-                        <div class="product-controls">
-                            <input id="modal-qty" type="number" min="1" value="1">
-                            <button id="modal-add" class="add-to-cart-btn">Agregar al carrito</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+
+            // Attach event listener to the newly rendered button
             const addBtn = productModalBody.querySelector('#modal-add');
-            if (addBtn) addBtn.addEventListener('click', () => { const qty = parseInt(document.getElementById('modal-qty').value) || 1; if (qty>0) { addToOrder(productId, qty); productModal.style.display='none'; } });
+            if (addBtn) {
+                addBtn.addEventListener('click', () => { const qty = parseInt(document.getElementById('modal-qty').value) || 1; if (qty > 0) { addToOrder(productId, qty); closeModal(productModal); } }, { once: true });
+            }
         }
 
         openModal(productModal);
@@ -386,6 +374,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+
+        // Attach listener to the add button
+        const addButton = container.querySelector('#modal-add');
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                const qtyInput = container.querySelector('#modal-qty');
+                const quantity = parseInt(qtyInput.value) || 1;
+                if (quantity > 0) {
+                    addToOrder(product.id, quantity);
+                    // If inside a modal, close it
+                    const parentModal = container.closest('.modal');
+                    if (parentModal) closeModal(parentModal);
+                }
+            });
+        }
     };
 
     window.renderOrderTo = function(container) {
@@ -413,6 +416,20 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
     };
+
+    // --- Global function to generate and open WhatsApp link ---
+    window.shareOrderViaWhatsapp = function(order, additionalText = '') {
+        if (!order || order.length === 0) return;
+
+        const lines = order.map(i => `${i.quantity} x ${i.name} - ${formatPrice(i.price * i.quantity)}`).join('\n');
+        const total = order.reduce((s, i) => s + i.price * i.quantity, 0);
+
+        let text = `Hola! Quisiera hacer un pedido:\n${lines}\nTotal: ${formatPrice(total)}`;
+        if (additionalText) text += '\n\n' + additionalText;
+
+        const whatsappUrl = `https://wa.me/5493456256330?text=${encodeURIComponent(text)}`;
+        window.open(whatsappUrl, '_blank');
+    }
 
     // --- Modal open/close + focus trap / accessibility helpers ---
     function getFocusableElements(container) {
@@ -471,74 +488,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderModal = document.getElementById('order-modal');
     const orderModalBody = document.getElementById('order-modal-body');
 
-    function renderOrderModal() {
-        const order = getOrder();
-        if (!orderModalBody) return;
+    // Use event delegation for order modal actions
+    if (orderModalBody) {
+        orderModalBody.addEventListener('click', (e) => {
+            const target = e.target;
+            let order = getOrder();
 
-        if (order.length === 0) {
-            orderModalBody.innerHTML = `<p>Tu carrito está vacío.</p>`;
-            return;
-        }
+            // Remove item
+            if (target.matches('.remove-item')) {
+                const id = parseInt(target.dataset.id);
+                order = order.filter(i => i.id !== id);
+                saveOrder(order);
+            }
+            // Send order
+            else if (target.matches('#send-order')) {
+                if (window.shareOrderViaWhatsapp) window.shareOrderViaWhatsapp(order);
+                return; // Don't re-render
+            } else {
+                return; // Exit if not a relevant click
+            }
 
-        const itemsHtml = order.map(item => `
-            <li data-id="${item.id}">
-                <span>${item.name} x <input class="order-qty" data-id="${item.id}" type="number" min="1" value="${item.quantity}"></span>
-                <span>${formatPrice(item.price * item.quantity)}</span>
-                <button class="remove-item" data-id="${item.id}">✕</button>
-            </li>
-        `).join('');
-
-        const total = order.reduce((s,i) => s + i.price * i.quantity, 0);
-
-        orderModalBody.innerHTML = `
-            <h2>Tu Pedido</h2>
-            <ul id="order-items" style="list-style:none;padding:0;">${itemsHtml}</ul>
-            <div style="margin-top:12px;font-weight:bold;">Total: ${formatPrice(total)}</div>
-            <div style="margin-top:16px;display:flex;gap:8px;">
-                <button id="send-order" class="add-to-cart-btn">Enviar Pedido por WhatsApp</button>
-                <a href="pedido.html">Ir a página de pedido</a>
-            </div>
-        `;
-
-        // Attach handlers
-        // after render, attach handlers
-        orderModalBody.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(e.target.dataset.id);
-                let ord = getOrder();
-                ord = ord.filter(i => i.id !== id);
-                saveOrder(ord);
-                if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
-                renderOrderModal();
-                updateCartBadge();
-            });
+            // Re-render and update badge
+            if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
+            updateCartBadge();
         });
 
-        orderModalBody.querySelectorAll('.order-qty').forEach(input => {
-            input.addEventListener('change', (e) => {
+        orderModalBody.addEventListener('change', (e) => {
+            if (e.target.matches('.order-qty')) {
                 const id = parseInt(e.target.dataset.id);
-                const val = Math.max(1, parseInt(e.target.value) || 1);
-                const ord = getOrder();
-                const item = ord.find(i => i.id === id);
-                if (item) item.quantity = val;
-                saveOrder(ord);
+                const quantity = Math.max(1, parseInt(e.target.value) || 1);
+                const order = getOrder();
+                const item = order.find(i => i.id === id);
+                if (item) item.quantity = quantity;
+                saveOrder(order);
                 if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
-                renderOrderModal();
                 updateCartBadge();
-            });
+            }
         });
-
-        const sendBtn = orderModalBody.querySelector('#send-order');
-        if (sendBtn) {
-            sendBtn.addEventListener('click', () => {
-                const ord = getOrder();
-                if (!ord.length) return;
-                const lines = ord.map(i => `${i.quantity} x ${i.name} - $${i.price}`).join('\n');
-                const total = ord.reduce((s,i) => s + i.price * i.quantity, 0);
-                const text = encodeURIComponent(`Hola! Quisiera hacer un pedido:\n${lines}\nTotal: $${total}`);
-                window.open(`https://wa.me/5493456256330?text=${text}`, '_blank');
-            });
-        }
     }
 
     // Close buttons for order modal
@@ -550,9 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cartLink) {
         cartLink.addEventListener('click', (e) => {
             e.preventDefault();
-            if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
-            // attach handlers inside modal after rendering
-            renderOrderModal();
+            if (window.renderOrderTo) window.renderOrderTo(orderModalBody); // Initial render
             openModal(orderModal);
         });
     }

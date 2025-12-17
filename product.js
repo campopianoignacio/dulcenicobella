@@ -64,16 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    document.getElementById('detail-add').addEventListener('click', () => {
-        const qty = parseInt(document.getElementById('detail-qty').value) || 1;
-        if (qty < 1) return;
-        const order = getOrder();
-        const existing = order.find(i => i.id === product.id);
-        if (existing) existing.quantity += qty; else order.push({...product, quantity: qty});
-        saveOrder(order);
-        updateCartBadge();
-        showToast('Agregado');
-    });
+    // The shared renderer `renderProductTo` now attaches its own event handler
+    // which calls `addToOrder` and handles toast/animations.
+    // We just need to ensure the button exists and the handler is attached.
+    if (window.renderProductTo) {
+        window.renderProductTo(detail, product.id);
+    }
 
     updateCartBadge();
 });
