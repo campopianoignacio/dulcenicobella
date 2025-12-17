@@ -16,6 +16,44 @@ document.addEventListener('DOMContentLoaded', () => {
         return JSON.parse(localStorage.getItem('dulceNicobellaOrder')) || [];
     }
 
+    function saveOrder(order) {
+        localStorage.setItem('dulceNicobellaOrder', JSON.stringify(order));
+    }
+
+    function updateCartBadge() {
+        const order = getOrder();
+        const totalItems = order.reduce((sum, item) => sum + item.quantity, 0);
+        if (cartBadge) {
+            cartBadge.textContent = totalItems;
+            cartBadge.classList.toggle('active', totalItems > 0);
+        }
+    }
+
+    function addToOrder(productId, quantity) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        let order = getOrder();
+        const existingOrderItem = order.find(item => item.id === productId);
+
+        if (existingOrderItem) {
+            existingOrderItem.quantity += quantity;
+        } else {
+            order.push({ ...product, quantity });
+        }
+        
+        saveOrder(order);
+        updateCartBadge();
+        
+        // Animación del carrito
+        const cartIcon = document.querySelector('.cart-icon-link');
+        if (cartIcon) {
+            cartIcon.classList.add('shake');
+            setTimeout(() => cartIcon.classList.remove('shake'), 500);
+        }
+        showToast('Agregado');
+    }
+
     function slugify(text) {
         return normalizeText(text)
             .replace(/[^a-z0-9]+/g, '-')
