@@ -1,227 +1,143 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const qs = new URLSearchParams(location.search);
-    const id = parseInt(qs.get('id')) || null;
-    const detail = document.getElementById('product-detail');
+        const productDetailSection = document.getElementById('product-detail');
+    if (!productDetailSection) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = parseInt(urlParams.get('id'), 10);
     const products = window.DULCE_PRODUCTS || [];
 
-    if (!id) {
-        detail.innerHTML = '<p>Producto no encontrado.</p>';
+     if (!productId) {
+        productDetailSection.innerHTML = '<p>Producto no encontrado. <a href="index.html">Volver al catálogo</a>.</p>';
         return;
     }
 
-    const product = products.find(p => p.id === id);
+        const product = products.find(p => p.id === productId);
     if (!product) {
-        detail.innerHTML = '<p>Producto no encontrado.</p>';
+        productDetailSection.innerHTML = '<p>Producto no encontrado. <a href="index.html">Volver al catálogo</a>.</p>';
         return;
     }
 
-    // --- GALERÍA DE IMÁGENES ---
-    function renderImageGallery(container, product) {
-        const storedImages = JSON.parse(localStorage.getItem(`productImages_${product.id}`) || '[]');
-        const images = storedImages.length > 0 ? storedImages : [product.image]; // Fallback a la imagen principal
+    // Recuperar imágenes de la galería o usar la imagen principal como fallback
+    const storedImages = JSON.parse(localStorage.getItem(`productImages_${product.id}`) || '[]');
+    const galleryImages = storedImages.length > 0 ? storedImages : [product.image.replace(/\.svg$/, '.jfif')];
+
+    // --- RENDERIZADO DE LA GALERÍA Y LA PÁGINA ---
+    function renderProductPage() {
+        const mainImageHtml = galleryImages.map((src, index) => `<img src="${src}" alt="${product.name}" class="gallery-image ${index === 0 ? 'active' : ''}">`).join('');
         
-        if (!container) return;
-
-        let currentIndex = 0;
-
-        const imagesHtml = images.map(imgSrc => `<img src="${imgSrc}" alt="${product.name}" class="gallery-image" loading="lazy" width="500" height="500">`).join('');
-
-        const thumbnailsHtml = images.length > 1
-            ? `
+        const thumbnailsHtml = galleryImages.length > 1 ? `
             <div class="gallery-thumbnails">
-                ${images.map((imgSrc, index) => `
-                    <button class="thumbnail-item ${index === 0 ? 'active' : ''}" data-index="${index}" aria-label="Ver imagen ${index + 1}">
-                        <img src="${imgSrc}" alt="Miniatura ${index + 1}" loading="lazy" width="70" height="70">
+                ${galleryImages.map((src, index) => `
+                    <button class="thumbnail-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        <img src="${src}" alt="Miniatura ${index + 1}">
                     </button>
                 `).join('')}
-            </div>` : '';
+            </div>
+        ` : '';
 
-        container.innerHTML = `
-            <div class="gallery-container">
-                <div class="gallery-main-image">
-                    <div class="gallery-track" style="width: ${images.length * 100}%; --image-count: ${images.length};">
-                        ${imagesHtml}
+        const galleryHtml = `
+            <div class="product-detail-media">
+                <div class="gallery-container">
+                    <div class="gallery-main-image">
+                        <div class="gallery-track" style="--image-count: ${galleryImages.length};">
+                            ${mainImageHtml}
+                        </div>
                     </div>
+                    ${galleryImages.length > 1 ? `
+                        <button class="gallery-nav prev" aria-label="Anterior">‹</button>
+                        <button class="gallery-nav next" aria-label="Siguiente">›</button>
+                        <div class="gallery-counter">1 / ${galleryImages.length}</div>
+                    ` : ''}
                 </div>
-                ${images.length > 1 ? `
-                    <button class="gallery-nav prev" aria-label="Imagen anterior">‹</button>
-                    <button class="gallery-nav next" aria-label="Siguiente imagen">›</button>
-                ` : ''}
-                ${images.length > 1 ? `<div class="gallery-counter">${currentIndex + 1} / ${images.length}</div>` : ''}
                 ${thumbnailsHtml}
             </div>
         `;
 
-        const track = container.querySelector('.gallery-track');
-        const counter = container.querySelector('.gallery-counter');
-        const thumbnails = container.querySelectorAll('.thumbnail-item');
+           productDetailSection.innerHTML = `
+            <div class="product-detail-grid">
+                ${galleryHtml}
+                <div class="product-detail-info">
+                    <h1>${product.name}</h1>
+                    <div class="product-price-detail">${window.formatPrice(product.price)}</div>
+                    <p>${product.description}</p>
+                    <div class="product-controls">
+                        <input id="detail-qty" type="number" min="1" value="1" class="product-quantity">
+                        <button id="detail-add" class="add-to-cart-btn" data-id="${product.id}">Agregar al carrito</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
-        function updateImage(index) {
-            currentIndex = index;
-            const offset = -currentIndex * (100 / images.length);
-            if (track) track.style.transform = `translateX(${offset}%)`;
-            if (counter) counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    // --- LÓGICA DE LA GALERÍA ---
+    function setupGalleryControls() {
+        const images = productDetailSection.querySelectorAll('.gallery-image');
+        if (images.length <= 1) return;
 
-            // Actualizar la miniatura activa
-            thumbnails.forEach((thumb, i) => {
-                const isActive = i === currentIndex;
-                thumb.classList.toggle('active', isActive);
-                if (isActive) {
-                    thumb.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'nearest',
-                        inline: 'center'
-                    });
-                }
-            });
+    let currentIndex = 0;
+        const totalImages = galleryImages.length;
+        const counter = productDetailSection.querySelector('.gallery-counter');
+        const thumbnails = productDetailSection.querySelectorAll('.thumbnail-item');
+
+        function updateGallery(newIndex) {
+            // Oculta la imagen actual
+            images[currentIndex].classList.remove('active');
+            thumbnails[currentIndex].classList.remove('active');
+
+            // Muestra la nueva imagen
+            currentIndex = newIndex;
+            images[currentIndex].classList.add('active');
+            thumbnails[currentIndex].classList.add('active');
+
+            // Actualiza el contador
+            if (counter) counter.textContent = `${currentIndex + 1} / ${totalImages}`;
         }
 
-        container.querySelector('.next')?.addEventListener('click', () => {
-            const nextIndex = (currentIndex + 1) % images.length;
-            updateImage(nextIndex);
+        productDetailSection.querySelector('.next')?.addEventListener('click', () => {
+            updateGallery((currentIndex + 1) % totalImages);
         });
 
-        container.querySelector('.prev')?.addEventListener('click', () => {
-            const prevIndex = (currentIndex - 1 + images.length) % images.length;
-            updateImage(prevIndex);
+        productDetailSection.querySelector('.prev')?.addEventListener('click', () => {
+            updateGallery((currentIndex - 1 + totalImages) % totalImages);
         });
 
-        // Event listener para las miniaturas
         thumbnails.forEach(thumb => {
             thumb.addEventListener('click', () => {
-                const index = parseInt(thumb.dataset.index);
-                updateImage(index);
+                updateGallery(parseInt(thumb.dataset.index, 10));
             });
         });
-        // --- Lógica para abrir en pantalla completa ---
-        function openFullscreen(startIndex) {
-            let fsCurrentIndex = startIndex;
-            const overlay = document.createElement('div');
-            overlay.className = 'fullscreen-overlay';
+    }
 
-            const arrowsHtml = images.length > 1 ? `
-                <button class="gallery-nav prev fs-nav" aria-label="Imagen anterior">‹</button>
-                <button class="gallery-nav next fs-nav" aria-label="Siguiente imagen">›</button>
-            ` : '';
-
-            const counterHtml = images.length > 1 ? `<div class="gallery-counter fs-counter">${fsCurrentIndex + 1} / ${images.length}</div>` : '';
-
-            const fsThumbnailsHtml = images.length > 1
-                ? `
-                <div class="gallery-thumbnails fs-thumbnails">
-                    ${images.map((imgSrc, index) => `
-                        <button class="thumbnail-item ${index === startIndex ? 'active' : ''}" data-index="${index}" aria-label="Ver imagen ${index + 1}">
-                            <img src="${imgSrc}" alt="Miniatura ${index + 1}" loading="lazy" width="70" height="70">
-                        </button>
-                    `).join('')}
-                </div>` : '';
-
-            overlay.innerHTML = `
-                <button class="close-fullscreen" aria-label="Cerrar vista completa">&times;</button>
-                ${arrowsHtml}
-                <img src="${images[fsCurrentIndex]}" alt="Vista a pantalla completa" width="1000" height="1000">
-                ${counterHtml}
-                ${fsThumbnailsHtml}
-            `;
-            document.body.appendChild(overlay);
-
-            const fsImage = overlay.querySelector('img');
-            const fsCounter = overlay.querySelector('.fs-counter');
-            const fsThumbnails = overlay.querySelectorAll('.fs-thumbnails .thumbnail-item');
-
-            function updateFullscreenImage(newIndex) {
-                fsCurrentIndex = newIndex;
-                fsImage.style.opacity = 0;
-                setTimeout(() => {
-                    fsImage.src = images[fsCurrentIndex];
-                    fsImage.style.opacity = 1;
-                }, 150);
-                if (fsCounter) fsCounter.textContent = `${fsCurrentIndex + 1} / ${images.length}`;
-
-                fsThumbnails.forEach((thumb, i) => {
-                    const isActive = i === fsCurrentIndex;
-                    thumb.classList.toggle('active', isActive);
-                    if (isActive) {
-                        thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                    }
-                });
-            }
-
-            const close = () => {
-                document.removeEventListener('keydown', onKey);
-                document.body.removeChild(overlay);
-            };
-
-            const onKey = (e) => {
-                if (e.key === 'Escape') close();
-                if (images.length > 1) {
-                    if (e.key === 'ArrowRight') updateFullscreenImage((fsCurrentIndex + 1) % images.length);
-                    if (e.key === 'ArrowLeft') updateFullscreenImage((fsCurrentIndex - 1 + images.length) % images.length);
-                }
-            };
-
-            overlay.addEventListener('click', (e) => {
-                if (e.target.classList.contains('next')) {
-                    updateFullscreenImage((fsCurrentIndex + 1) % images.length);
-                } else if (e.target.classList.contains('prev')) {
-                    updateFullscreenImage((fsCurrentIndex - 1 + images.length) % images.length);
-                } else if (e.target === overlay || e.target.classList.contains('close-fullscreen')) {
-                    close();
-                }
-            });
-
-            fsThumbnails.forEach(thumb => {
-                thumb.addEventListener('click', () => {
-                    const index = parseInt(thumb.dataset.index);
-                    updateFullscreenImage(index);
-                });
-            });
-            document.addEventListener('keydown', onKey);
-        }
-
-        if (track) {
-            track.addEventListener('click', (e) => {
-                if (e.target.classList.contains('gallery-image')) {
-                    openFullscreen(currentIndex);
+    // --- LÓGICA DE LA PÁGINA ---
+    function setupPageLogic() {
+        // Botón "Agregar al carrito"
+        const addButton = document.getElementById('detail-add');
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                const quantity = parseInt(document.getElementById('detail-qty').value, 10);
+                if (quantity > 0) {
+                    window.addToOrder?.(product.id, quantity);
                 }
             });
         }
+
+        // Actualización dinámica de precio
+        const quantityInput = document.getElementById('detail-qty');
+        const priceDisplay = document.querySelector('.product-price-detail');
+        if (quantityInput && priceDisplay) {
+            const basePrice = product.price;
+            quantityInput.addEventListener('input', () => {
+                const quantity = parseInt(quantityInput.value) || 1;
+                priceDisplay.textContent = window.formatPrice(basePrice * quantity);
+            });
+        }
+
+        // Actualizar contador del carrito
+        window.updateCartBadge?.();
     }
 
-    // Use shared renderer when available (DRY)
-    window.renderProductTo(detail, product.id);
-    
-    // Render the gallery into the media container
-    renderImageGallery(detail.querySelector('.product-detail-media'), product);
-
-    // --- Manejador para el botón "Agregar al carrito" ---
-    const addButton = detail.querySelector('.add-to-cart-btn');
-    if (addButton) {
-        addButton.addEventListener('click', () => {
-            const quantityInput = detail.querySelector('#detail-qty');
-            const quantity = parseInt(quantityInput.value) || 1;
-            if (quantity > 0 && window.addToOrder) {
-                // Usamos la función global de script.js para consistencia
-                window.addToOrder(product.id, quantity);
-            }
-        });
-    }
-
-    // --- Lógica para actualizar el precio dinámicamente ---
-    const quantityInput = detail.querySelector('#detail-qty');
-    const priceDisplay = detail.querySelector('.product-price-detail');
-
-    if (quantityInput && priceDisplay && product && window.formatPrice) {
-        const basePrice = product.price;
-
-        quantityInput.addEventListener('input', () => {
-            const quantity = parseInt(quantityInput.value) || 1;
-            if (quantity > 0) {
-                const totalPrice = basePrice * quantity;
-                priceDisplay.textContent = window.formatPrice(totalPrice);
-            }
-        });
-    }
-
-    if (window.updateCartBadge) window.updateCartBadge();
+    // --- INICIALIZACIÓN ---
+    renderProductPage();
+    setupGalleryControls();
+    setupPageLogic();
 });

@@ -100,7 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (product.image) {
             baseNames.add(product.image.replace(/^images\//, '').replace(/\.svg$/, ''));
         }
-        baseNames.add(slugify(product.name));
+        // Limpiar el nombre del producto de texto entre paréntesis para un mejor slug
+        const cleanedName = product.name.replace(/\s*\(.*\)/g, '');
+        baseNames.add(slugify(cleanedName));
 
         for (const base of baseNames) {
             // Check for base image (e.g., postre-chaja.jpg)
@@ -296,28 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         openModal(productModal);
     }
-
-    // --- Render helpers exposed globally for DRY use on product/pedido pages ---
-    window.renderProductTo = function(container, productId) {
-        const product = products.find(p => p.id === productId);
-        if (!product || !container) return;
-        container.innerHTML = `
-            <div class="product-detail-grid">
-                <div class="product-detail-media">
-                    <img src="${product.image.replace('.svg', '.jfif')}" alt="${product.name}" loading="lazy" width="500" height="500">
-                </div>
-                <div class="product-detail-info">
-                    <h1 id="product-modal-title">${product.name}</h1>
-                    <div class="product-price-detail">${window.formatPrice(product.price)}</div>
-                    <p>${product.description}</p>
-                    <div class="product-controls">
-                        <input id="detail-qty" type="number" min="1" value="1">
-                        <button id="detail-add" class="add-to-cart-btn">Agregar al carrito</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    };
 
     window.renderOrderTo = function(container, options = {}) {
         if (!container) return;

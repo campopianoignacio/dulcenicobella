@@ -537,7 +537,7 @@ footer p {
 
 /* --- Modal de Confirmación --- */
 .modal {
-    display: none;
+    display: none; /* Oculto por defecto */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -546,7 +546,10 @@ footer p {
     height: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.5);
-    /* Centrado vertical y horizontal */
+}
+
+/* Cuando el modal está visible, usamos flex para centrar */
+.modal.show {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -711,6 +714,14 @@ footer p {
     font-size: 16px; /* Evita el zoom automático en iOS */
 }
 
+/* Layout de la página de pedido */
+.order-page-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr; /* Columna de resumen más pequeña */
+    gap: 40px;
+    align-items: flex-start;
+}
+
 @media (max-width: 768px) {
     .product-detail-grid {
         grid-template-columns: 1fr;
@@ -734,6 +745,13 @@ html, body {
     will-change: opacity;
 }
 
+/* --- Contenedor de medios en la página de producto --- */
+.product-detail-media {
+    /* Esto es clave: asegura que el contenedor no se estire por su contenido */
+    min-width: 0;
+    overflow: hidden; /* Oculta cualquier desbordamiento, como el de las miniaturas */
+}
+
 /* --- ESTILOS PARA LA NUEVA PÁGINA DE PEDIDO (SOBREESCRITURAS) --- */
 /* Especificidad para evitar conflicto con los estilos del modal del carrito */
 .order-summary-column .summary-item-thumbnail {
@@ -741,14 +759,6 @@ html, body {
     height: 60px;
     object-fit: cover;
     border-radius: 6px;
-}
-
-/* Layout de la página de pedido */
-.order-page-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.25fr; /* Columna de resumen más pequeña */
-    gap: 40px;
-    align-items: flex-start;
 }
 
 /* Estilos para ambas columnas */
@@ -893,29 +903,33 @@ html, body {
     overflow: hidden;
 }
 
+/* Contenedor principal de la imagen. Mantiene la forma cuadrada. */
 .gallery-main-image {
     position: relative;
     width: 100%;
-    padding-top: 100%; /* Para una relación de aspecto 1:1, ajústalo si tus imágenes son diferentes */
+    aspect-ratio: 1 / 1;
     background-color: #f9f9f9;
     border-radius: 8px;
-    overflow: hidden; /* Oculta las imágenes que se salen del contenedor */
+    overflow: hidden;
 }
 
-.gallery-track {
-    position: absolute;
+/* Cada imagen individual dentro del track */
+.gallery-image {
+    position: absolute; /* Todas las imágenes se apilan en el mismo lugar */
     top: 0;
     left: 0;
+    width: 100%;
     height: 100%;
-    display: flex;
-    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Transición de deslizamiento */
+    object-fit: contain; /* Asegura que la imagen completa sea visible */
+    opacity: 0; /* Oculta por defecto */
+    transition: opacity 0.3s ease-in-out; /* Animación suave de fade */
+    z-index: 1;
 }
 
-.gallery-image {
-    /* Cada imagen debe ocupar una fracción del track total */
-    width: calc(100% / var(--image-count, 1));
-    height: 100%;
-    object-fit: cover;
+/* La imagen activa se hace visible */
+.gallery-image.active {
+    opacity: 1;
+    z-index: 2;
 }
 
 .gallery-nav {
@@ -934,6 +948,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 3; /* Asegura que las flechas estén por encima de las imágenes */
     transition: background-color 0.2s, box-shadow 0.2s;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     -webkit-tap-highlight-color: transparent; /* Evita el flash en móviles */
