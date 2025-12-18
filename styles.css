@@ -862,7 +862,7 @@ html, body {
 .gallery-container {
     position: relative;
     width: 100%;
-    max-width: 500px; /* O el tamaño que prefieras */
+    max-width: 100%; /* Permitir que ocupe el ancho del contenedor padre */
     margin: 0 auto;
     overflow: hidden;
 }
@@ -1003,6 +1003,7 @@ html, body {
     gap: 8px;
     margin-top: 12px;
     overflow-x: auto; /* Permite scroll horizontal si hay muchas imágenes */
+    justify-content: flex-start; /* Alinea las miniaturas al inicio */
     padding-bottom: 5px; /* Espacio para la barra de scroll */
 }
 
