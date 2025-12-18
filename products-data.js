@@ -21,6 +21,6 @@ window.DULCE_PRODUCTS = [
     { id: 19, name: 'Paletas bañadas en chocolate', category: 'Candy', description: 'Paletas bañadas en chocolate, dulces y tentadoras, con una cobertura suave y deliciosa.', image: 'images/paletas-bañadas-en-chocolate.svg', price: 1750 },
     { id: 20, name: 'Alfajores de Chocolate', category: 'Candy', description: 'Alfajores de chocolate suaves y bien rellenos, con cobertura dulce y sabor equilibrado.', image: 'images/alfajores-de-chocolate.svg', price: 1000 },
     { id: 21, name: 'Alfajores de Maicena', category: 'Candy', description: 'Alfajores de maicena clásicos, rellenos con dulce de leche y espolvoreados con coco.', image: 'images/alfajores-de-maicena.svg', price: 500 },
-    { id: 22, name: 'Pionono', category: 'Postres', description: 'Pionono dulce suave y esponjoso, relleno de dulce de leche y con sabor delicado, ideal para compartir.', image: 'images/pionono.svg', price: 10000000 },
+    { id: 22, name: 'Pionono', category: 'Postres', description: 'Pionono dulce suave y esponjoso, relleno de dulce de leche y con sabor delicado, ideal para compartir.', image: 'images/pionono.svg', price: 10000 },
 
 ];

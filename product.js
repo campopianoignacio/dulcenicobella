@@ -189,27 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Use shared renderer when available (DRY)
-    if (window.renderProductTo) {
-        window.renderProductTo(detail, product.id);
-    } else {
-        detail.innerHTML = `
-            <div class="product-detail-grid">
-                <div class="product-detail-media">
-                    <img src="${product.image.replace('.svg', '.jfif')}" alt="${product.name}" loading="lazy" width="500" height="500">
-                </div>
-                <div class="product-detail-info">
-                    <h1>${product.name}</h1>
-                    <div class="product-price-detail">${( '$' + product.price.toLocaleString('es-AR') )}</div>
-                    <p>${product.description}</p>
-                    <div class="product-controls">
-                        <input id="detail-qty" type="number" min="1" value="1">
-                        <button id="detail-add" class="add-to-cart-btn">Agregar al carrito</button>
-                    </div>
-                    <p><a href="index.html">Volver al catálogo</a></p>
-                </div>
-            </div>
-        `;
-    }
+    window.renderProductTo(detail, product.id);
     
     // Render the gallery into the media container
     renderImageGallery(detail.querySelector('.product-detail-media'), product);

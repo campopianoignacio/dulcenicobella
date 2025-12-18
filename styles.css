@@ -476,9 +476,6 @@ header .logo {
 .toast.hide {
     opacity: 0;
 }
-.toast.hide {
-    opacity: 0;
-}
 
 /* --- Footer --- */
 footer {
@@ -696,6 +693,11 @@ footer p {
     .product-detail-grid {
         grid-template-columns: 1fr;
     }
+    .order-page-layout {
+        grid-template-columns: 1fr; /* Apila las columnas en móvil */
+        gap: 30px;
+    }
+
 }
 
 /* Transiciones de página (fade in/out suave) */
@@ -705,6 +707,100 @@ html.is-rendering, body.is-rendering {
 }
 html, body {
     will-change: opacity;
+}
+
+/* --- ESTILOS PARA LA NUEVA PÁGINA DE PEDIDO (SOBREESCRITURAS) --- */
+/* Especificidad para evitar conflicto con los estilos del modal del carrito */
+.order-summary-column .summary-item-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+
+/* Layout de la página de pedido */
+.order-page-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr; /* Columna de resumen más pequeña */
+    gap: 50px;
+    align-items: flex-start;
+}
+
+/* Estilos para ambas columnas */
+.order-summary-column,
+.order-form-column {
+    background: var(--white-color);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.order-page-layout h2 {
+    font-size: 2rem;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-color);
+    text-align: center;
+}
+
+/* Estilos para el resumen del pedido */
+#order-summary-container .cart-item {
+    padding: 15px 0;
+}
+
+#order-summary-container .cart-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#order-summary-container .cart-item-price {
+    font-size: 1rem;
+    font-weight: normal;
+    color: #555;
+}
+
+#order-summary-container .cart-item-controls {
+    justify-content: space-between;
+}
+
+/* Estilos para el total del pedido en la página */
+.page-order-total {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 2px solid var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Estilos para el formulario de pedido */
+.order-form-column .form-group input:focus,
+.order-form-column .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 209, 220, 0.6);
+}
+
+.submit-button {
+    background-color: var(--success-color);
+    color: var(--white-color);
+    border: none;
+    padding: 15px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: block;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 20px;
+}
+
+.submit-button:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
 }
 
 /* --- Estilos para el Carrito/Modal de Pedido --- */
@@ -753,6 +849,7 @@ html, body {
 
 .cart-item-price {
     font-weight: 600;
+    color: var(--text-color);
     margin-left: auto;
 }
 
@@ -964,6 +1061,4 @@ html, body {
     50% {
         opacity: 1;
     }
-}
-
 }

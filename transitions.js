@@ -24,6 +24,10 @@
         // Interceptar clicks a enlaces internos para hacer fade-out
         document.addEventListener('click', (e) => {
             const anchor = e.target.closest('a');
+            // Si el clic ocurrió dentro del formulario de pedido, ignorarlo por completo
+            // para evitar conflictos con el botón de envío.
+            if (e.target.closest('#order-form')) return;
+
             if (!anchor) return;
             if (!isInternalLink(anchor)) return;
             e.preventDefault();

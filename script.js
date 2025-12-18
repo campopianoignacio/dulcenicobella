@@ -1,3 +1,23 @@
+// --- FUNCIONES GLOBALES DEL CARRITO Y UTILIDADES ---
+// Definidas fuera de DOMContentLoaded para que estén disponibles inmediatamente para otros scripts.
+
+window.getOrder = function() {
+    return JSON.parse(localStorage.getItem('dulceNicobellaOrder')) || [];
+};
+
+window.saveOrder = function(order) {
+    localStorage.setItem('dulceNicobellaOrder', JSON.stringify(order));
+};
+
+window.clearOrder = function() {
+    localStorage.removeItem('dulceNicobellaOrder');
+    // La actualización visual del badge se hará dentro del DOMContentLoaded.
+};
+
+window.formatPrice = function(price) {
+    return `$${price.toLocaleString('es-AR')}`;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- BASE DE DATOS DE PRODUCTOS (importada) ---
@@ -10,14 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('confirmation-modal');
     const closeModalBtn = document.querySelector('.close-btn');
     const modalMessage = document.getElementById('modal-message');
-
-    // --- LÓGICA DEL CARRITO (localStorage) ---
-    function getOrder() {
-        return JSON.parse(localStorage.getItem('dulceNicobellaOrder')) || [];
-    }
-
-    function saveOrder(order) {
-        localStorage.setItem('dulceNicobellaOrder', JSON.stringify(order));
+    
+    // Sobrescribimos clearOrder para que también actualice el badge
+    const originalClearOrder = window.clearOrder;
+    window.clearOrder = function() {
+        originalClearOrder();
+        updateCartBadge();
     }
 
     function updateCartBadge() {
@@ -33,13 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const product = products.find(p => p.id === productId);
         if (!product) return;
 
-        let order = getOrder();
+        let order = window.getOrder();
         const existingOrderItem = order.find(item => item.id === productId);
 
         if (existingOrderItem) {
             existingOrderItem.quantity += quantity;
         } else {
-            order.push({ ...product, quantity });
+            order.push({ ...product, quantity: quantity });
         }
         
         saveOrder(order);
@@ -106,11 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return foundImages;
     }
-
-    // --- FUNCIÓN PARA FORMATEAR PRECIOS ---
-    window.formatPrice = function(price) {
-        return `$${price.toLocaleString('es-AR')}`;
-    };
 
     // --- FUNCIÓN PARA NORMALIZAR TEXTO (quitar tildes y a minúsculas) ---
     function normalizeText(text) {
@@ -306,11 +319,26 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    window.renderOrderTo = function(container) {
+    window.renderOrderTo = function(container, options = {}) {
         if (!container) return;
         const order = getOrder();
+        const { isPage = false } = options;
+
+        // En la página de pedido, también controlamos la visibilidad del formulario
+        if (isPage) {
+            const formContainer = document.getElementById('form-fields-container');
+            const submitButton = document.getElementById('submit-pedido');
+            const showForm = order.length > 0;
+            if (formContainer) formContainer.style.display = showForm ? '' : 'none';
+            if (submitButton) submitButton.style.display = showForm ? '' : 'none';
+        }
+
         if (order.length === 0) {
-            container.innerHTML = '<p>Tu carrito está vacío.</p>';
+            // En la página de pedido, el título ya existe, solo ponemos el mensaje.
+            // En el modal, sí reemplazamos todo.
+            container.innerHTML = isPage 
+                ? '<p>Tu carrito está vacío.</p>' 
+                : '<p>Tu carrito está vacío.</p>';
             return;
         }
         const itemsHtml = order.map(item => `
@@ -323,19 +351,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="cart-item-price">${window.formatPrice(item.price * item.quantity)}</span>
                     </div>
                 </div>
-                <button class="remove-item" data-id="${item.id}" aria-label="Eliminar item">✕</button>
             </li>
         `).join('');
         const total = order.reduce((s,i) => s + i.price * i.quantity, 0);
-        container.innerHTML = `
-            <h2 id="order-modal-title">Tu Pedido</h2>
-            <ul id="order-items">${itemsHtml}</ul>
-            <div style="margin-top:12px;font-weight:bold;">Total: ${window.formatPrice(total)}</div>
+
+        const buttonsHtml = isPage ? '' : `
             <div style="margin-top:16px;display:flex;gap:8px;">
                 <button id="send-order" class="add-to-cart-btn">Enviar Pedido por WhatsApp</button>
                 <a href="pedido.html">Ir a página de pedido</a>
             </div>
         `;
+
+        // Si es la página de pedido, solo insertamos la lista y el total.
+        // Si es el modal, reemplazamos todo el contenido con el título y los botones.
+        if (isPage) {
+            container.innerHTML = `
+                <ul id="order-items">${itemsHtml}</ul>
+                <div style="margin-top:12px;font-weight:bold;">Total: ${window.formatPrice(total)}</div>
+            `;
+        } else {
+            container.innerHTML = `
+                <h2 id="order-modal-title">Tu Pedido</h2>
+                <ul id="order-items">${itemsHtml}</ul>
+                <div style="margin-top:12px;font-weight:bold;">Total: ${window.formatPrice(total)}</div>
+                ${buttonsHtml}
+            `;
+        }
     };
 
     // --- Global function to generate and open WhatsApp link ---
@@ -415,14 +456,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = e.target;
             let order = getOrder();
 
-            // Remove item
-            if (target.matches('.remove-item')) {
-                const id = parseInt(target.dataset.id);
-                order = order.filter(i => i.id !== id);
-                saveOrder(order);
-            }
             // Send order
-            else if (target.matches('#send-order')) {
+            if (target.matches('#send-order')) {
                 if (window.shareOrderViaWhatsapp) window.shareOrderViaWhatsapp(order);
                 return; // Don't re-render
             } else {
@@ -430,8 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Re-render and update badge
-            if (window.renderOrderTo) window.renderOrderTo(orderModalBody);
-            updateCartBadge();
+            // (La lógica de eliminación ha sido removida)
         });
 
         orderModalBody.addEventListener('change', (e) => {
