@@ -27,13 +27,13 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0 20px 20px; /* Ajustado para no sumar padding al header */
 }
 
 h1, h2, h3 {
     font-family: var(--font-main);
     color: var(--text-color);
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.03);
 }
 
 h1 {
@@ -46,7 +46,7 @@ h1 {
 /* --- Header --- */
 header {
     background: var(--white-color);
-    padding: 15px 0;
+    padding: 15px 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     margin-bottom: 30px;
     position: sticky;
@@ -57,7 +57,6 @@ header {
 .header-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -120,7 +119,7 @@ header .logo {
 
 /* --- Catálogo de Productos --- */
 #catalogo h1 {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 5vw, 2.5rem); /* Tamaño de fuente adaptable */
     margin-bottom: 20px;
     border-bottom: 2px solid var(--primary-color);
     padding-bottom: 10px;
@@ -542,11 +541,15 @@ footer p {
     position: fixed;
     z-index: 1000;
     left: 0;
-    top: 0;
+    top: 0; 
     width: 100%;
     height: 100%;
     overflow: auto;
     background-color: rgba(0,0,0,0.5);
+    /* Centrado vertical y horizontal */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -559,6 +562,7 @@ footer p {
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    margin: auto; /* Reemplaza el margin: 15% auto */
 }
 
 /* Modal improved styles */
@@ -569,7 +573,7 @@ footer p {
 
 .modal-content {
     max-width: 720px;
-    padding: 26px;
+    padding: 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.18);
 }
 
@@ -631,12 +635,22 @@ footer p {
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
-    h1, #catalogo h1, #formulario-pedido h2 {
-        font-size: 2.2rem;
+    .container {
+        padding: 0 15px 15px;
     }
-    
+    header {
+        padding: 10px 15px;
+        margin-bottom: 20px;
+    }
+    h1 {
+        font-size: 2.5rem;
+    }
+    #catalogo h1, #formulario-pedido h2, .order-page-layout h2 {
+        font-size: 1.8rem;
+    }
     .product-grid-inner {
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
     }
 }
 
@@ -644,11 +658,19 @@ footer p {
     .product-grid-inner {
         grid-template-columns: 1fr;
     }
-     header .logo {
+    header .logo {
         font-size: 1.8rem;
     }
     .cart-icon {
-        font-size: 1.8rem;
+        width: 26px;
+        height: 26px;
+    }
+    .modal-content {
+        width: 90%;
+        padding: 15px;
+    }
+    .product-detail-info h1 {
+        font-size: 1.5rem;
     }
 }
 
@@ -656,7 +678,7 @@ footer p {
 .product-detail-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 40px;
     align-items: start;
     margin-top: 30px;
 }
@@ -666,7 +688,7 @@ footer p {
     object-fit: cover;
 }
 .product-detail-info h1 {
-    font-size: 2rem;
+    font-size: 2.2rem;
     margin-bottom: 10px;
 }
 .product-price-detail {
@@ -692,12 +714,15 @@ footer p {
 @media (max-width: 768px) {
     .product-detail-grid {
         grid-template-columns: 1fr;
+        gap: 25px;
     }
     .order-page-layout {
         grid-template-columns: 1fr; /* Apila las columnas en móvil */
         gap: 30px;
     }
-
+    .order-summary-column, .order-form-column {
+        padding: 20px;
+    }
 }
 
 /* Transiciones de página (fade in/out suave) */
@@ -722,7 +747,7 @@ html, body {
 .order-page-layout {
     display: grid;
     grid-template-columns: 1fr 1.25fr; /* Columna de resumen más pequeña */
-    gap: 50px;
+    gap: 40px;
     align-items: flex-start;
 }
 
@@ -899,10 +924,10 @@ html, body {
     transform: translateY(-50%);
     background-color: rgba(255, 255, 255, 0.7);
     border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
+    border-radius: 50%; 
+    width: 44px; /* Más grande para ser más fácil de tocar */
+    height: 44px;
+    font-size: 28px;
     font-weight: bold;
     color: #333;
     cursor: pointer;
