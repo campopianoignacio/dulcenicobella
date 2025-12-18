@@ -716,6 +716,7 @@ html, body {
     height: 60px;
     object-fit: cover;
     border-radius: 6px;
+}
 
 /* Layout de la página de pedido */
 .order-page-layout {
