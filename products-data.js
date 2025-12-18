@@ -22,5 +22,5 @@ window.DULCE_PRODUCTS = [
     { id: 20, name: 'Alfajores de Chocolate', category: 'Candy', description: 'Alfajores de chocolate suaves y bien rellenos, con cobertura dulce y sabor equilibrado.', image: 'images/alfajores-de-chocolate.svg', price: 1000 },
     { id: 21, name: 'Alfajores de Maicena', category: 'Candy', description: 'Alfajores de maicena clásicos, rellenos con dulce de leche y espolvoreados con coco.', image: 'images/alfajores-de-maicena.svg', price: 500 },
     { id: 22, name: 'Pionono', category: 'Postres', description: 'Pionono dulce suave y esponjoso, relleno de dulce de leche y con sabor delicado, ideal para compartir.', image: 'images/pionono.svg', price: 15000 },
-
+    { id: 23, name: 'Bombones', category: 'Candy', description: 'Caja de bombones surtidos, con chocolates variados y rellenos delicados, ideal para regalar o disfrutar.', image: 'images/bombones.svg', price: 15000 },
 ];
