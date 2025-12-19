@@ -259,16 +259,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNCIONALIDAD DEL MODAL (para errores, etc.) ---
-    function showModal(title, message) {
+    window.showModal = function(title, message, options = {}) {
         if (!modal) return;
         const modalTitle = modal.querySelector('h2');
-        modalTitle.textContent = title;
-        modalMessage.innerHTML = message;
-        modal.style.display = 'block';
+        const modalBody = modal.querySelector('#modal-message');
 
-        setTimeout(() => {
-            if(modal) modal.style.display = 'none';
-        }, 2500);
+        modalTitle.textContent = title;
+        modalBody.innerHTML = message;
+
+        // Limpiar botones anteriores
+        const existingActions = modal.querySelector('.modal-actions');
+        if (existingActions) existingActions.remove();
+
+        if (options.onConfirm) {
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = options.confirmText || 'Aceptar';
+            confirmBtn.className = 'button-primary';
+            confirmBtn.onclick = () => {
+                options.onConfirm();
+                closeModal(modal);
+            };
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = options.cancelText || 'Cancelar';
+            cancelBtn.className = 'button-secondary';
+            cancelBtn.onclick = () => closeModal(modal);
+
+            actions.appendChild(cancelBtn);
+            actions.appendChild(confirmBtn);
+            modal.querySelector('.modal-content').appendChild(actions);
+        }
+
+        openModal(modal);
     }
     
     if (closeModalBtn) {
@@ -331,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="cart-item-price">${window.formatPrice(item.price * item.quantity)}</span>
                     </div>
                 </div>
+                <button class="remove-item-btn" data-id="${item.id}" aria-label="Quitar ${item.name}">&times;</button>
             </li>
         `).join('');
         const total = order.reduce((s,i) => s + i.price * i.quantity, 0);
@@ -347,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isPage) {
             container.innerHTML = `
                 <ul id="order-items">${itemsHtml}</ul>
-                <div style="margin-top:12px;font-weight:bold;">Total: ${window.formatPrice(total)}</div>
+                <div class="page-order-total"><span>Total</span> <span>${window.formatPrice(total)}</span></div>
             `;
         } else {
             container.innerHTML = `
@@ -480,6 +506,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // --- INICIALIZACIÓN ---
+
+    // Configurar la fecha mínima para el campo de fecha de entrega en la página de pedido
+    const fechaInput = document.getElementById('cliente-fecha');
+    if (fechaInput) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        // Los meses en JS van de 0 a 11, por eso se suma 1.
+        // Se añade un '0' delante si es menor de 10 para el formato YYYY-MM-DD.
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        
+        const formattedToday = `${yyyy}-${mm}-${dd}`;
+        fechaInput.setAttribute('min', formattedToday);
+    }
+
     renderProducts();
     updateCartBadge();
 });

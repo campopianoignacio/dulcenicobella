@@ -9,18 +9,6 @@
     /**
      * Muestra un modal de confirmación/error.
      */
-    function showModal(title, message) {
-        const modal = document.getElementById('confirmation-modal');
-        if (!modal) return;
-        modal.querySelector('h2').textContent = title;
-        modal.querySelector('#modal-message').innerHTML = message;
-        modal.style.display = 'block';
-
-        const closeModalBtn = modal.querySelector('.close-btn');
-        if (closeModalBtn) {
-            closeModalBtn.onclick = () => { modal.style.display = 'none'; };
-        }
-    }
 
     /**
      * Limpia el formulario, el carrito y redirige al inicio.
@@ -64,27 +52,34 @@
         formColumn.style.display = ''; // Asegurarse de que el formulario sea visible
 
         const itemsHtml = order.map(item => `
-            <li class="summary-item" data-id="${item.id}">
-                <img src="${item.image.replace('.svg', '.jfif')}" alt="${item.name}" class="summary-item-thumbnail">
-                <div class="summary-item-details">
-                    <span class="summary-item-name">${item.name}</span>
-                    <span class="summary-item-price">${window.formatPrice(item.price)} c/u</span>
+            <li class="cart-item" data-id="${item.id}">
+                <img src="${item.image.replace('.svg', '.jfif')}" alt="${item.name}" class="cart-item-thumbnail">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <span class="summary-item-price" style="font-size: 0.9rem; color: #777;">${window.formatPrice(item.price)} c/u</span>
                 </div>
-                <div class="summary-item-controls">
-                    <input type="number" class="summary-item-qty" value="${item.quantity}" min="1" aria-label="Cantidad de ${item.name}">
-                    <span class="summary-item-subtotal">${window.formatPrice(item.price * item.quantity)}</span>
+                <div class="cart-item-controls">
+                    <span class="cart-item-price">${window.formatPrice(item.price * item.quantity)}</span>
+                    <div class="quantity-stepper">
+                        <button class="quantity-btn down" data-amount="-1" aria-label="Disminuir cantidad">‹</button>
+                        <span class="quantity-value">${item.quantity}</span>
+                        <button class="quantity-btn up" data-amount="1" aria-label="Aumentar cantidad">›</button>
+                    </div>
                 </div>
-                <button class="summary-item-remove" aria-label="Eliminar ${item.name}">&times;</button>
+                <button class="remove-item-btn" aria-label="Eliminar ${item.name}">&times;</button>
             </li>
         `).join('');
 
         const total = order.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
         container.innerHTML = `
-            <ul class="summary-list">${itemsHtml}</ul>
+            <ul id="order-items">${itemsHtml}</ul>
             <div class="summary-total">
                 <span>Total</span>
                 <span id="summary-total-price">${window.formatPrice(total)}</span>
+            </div>
+            <div class="summary-actions">
+                <button id="clear-cart-btn" class="button-link-danger">Vaciar carrito</button>
             </div>
         `;
     }
@@ -92,14 +87,30 @@
     /**
      * Actualiza la cantidad de un item en el pedido.
      */
-    function updateItemQuantity(productId, newQuantity) {
+    function updateItemQuantity(productId, value, isRelative = false) {
         let order = window.getOrder?.() || [];
         const item = order.find(i => i.id === productId);
         if (item) {
-            item.quantity = newQuantity;
+            if (isRelative) {
+                item.quantity += value;
+            } else {
+                item.quantity = value;
+            }
+            // Asegurarse de que la cantidad nunca sea menor que 1
+            if (item.quantity < 1) item.quantity = 1;
+
+            const oldTotal = window.getOrder?.().reduce((sum, i) => sum + i.price * i.quantity, 0);
+
             window.saveOrder?.(order);
             window.updateCartBadge?.();
             renderOrderSummary(); // Re-render para actualizar todo
+
+            const newTotal = order.reduce((sum, i) => sum + i.price * i.quantity, 0);
+            if (oldTotal !== newTotal) {
+                const totalEl = document.getElementById('summary-total-price');
+                totalEl?.classList.add('price-update');
+                totalEl?.addEventListener('animationend', () => totalEl.classList.remove('price-update'), { once: true });
+            }
         }
     }
 
@@ -107,11 +118,20 @@
      * Elimina un item del pedido.
      */
     function removeItem(productId) {
-        let order = window.getOrder?.() || [];
-        const updatedOrder = order.filter(i => i.id !== productId);
-        window.saveOrder?.(updatedOrder);
-        window.updateCartBadge?.();
-        renderOrderSummary(); // Re-render para actualizar todo
+        const itemElement = document.querySelector(`.cart-item[data-id="${productId}"]`);
+        if (!itemElement) return;
+
+        // Añade una clase para la animación de salida
+        itemElement.style.animation = 'fadeOut 0.4s ease-out forwards';
+
+        // Espera a que la animación termine para eliminar el elemento y actualizar el estado
+        itemElement.addEventListener('animationend', () => {
+            let order = window.getOrder?.() || [];
+            const updatedOrder = order.filter(i => i.id !== productId);
+            window.saveOrder?.(updatedOrder);
+            window.updateCartBadge?.();
+            renderOrderSummary(); // Re-render para actualizar el total y el estado general
+        }, { once: true }); // El listener se ejecuta solo una vez
     }
 
     /**
@@ -123,7 +143,7 @@
 
         const order = window.getOrder?.() || [];
         if (order.length === 0) {
-            showModal('Error', 'Tu carrito está vacío.');
+            window.showModal('Error', 'Tu carrito está vacío.');
             return;
         }
 
@@ -132,7 +152,15 @@
         const deliveryDate = document.getElementById('cliente-fecha').value;
 
         if (!name || !phone || !deliveryDate) {
-            showModal('Error', 'Por favor, completá los campos obligatorios: Nombre, Teléfono y Fecha de Entrega.');
+            window.showModal('Error', 'Por favor, completá los campos obligatorios: Nombre, Teléfono y Fecha de Entrega.');
+            return;
+        }
+
+        // Validación del formato del teléfono
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(phone)) {
+            window.showModal('Teléfono incorrecto', 'Por favor, ingresá un número de 10 dígitos sin espacios ni caracteres especiales.<br>Ej: 3456123456');
+            document.getElementById('cliente-telefono').focus(); // Ayuda al usuario a corregirlo
             return;
         }
 
@@ -157,7 +185,7 @@
         const whatsappUrl = `https://wa.me/5493456256330?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
 
-        showModal('¡Pedido en camino!', 'Se está abriendo WhatsApp. Una vez enviado el mensaje, serás redirigido al catálogo en 5 segundos.');
+        window.showModal('¡Pedido en camino!', 'Se está abriendo WhatsApp. Una vez enviado el mensaje, serás redirigido al catálogo en 5 segundos.');
         setTimeout(cleanupAndRedirect, 5000);
     }
 
@@ -171,24 +199,37 @@
 
         // Listeners para el resumen del pedido (usando delegación de eventos)
         const summaryContainer = document.getElementById('order-summary-container');
-        summaryContainer?.addEventListener('change', (event) => {
-            if (event.target.classList.contains('summary-item-qty')) {
-                const li = event.target.closest('.summary-item');
-                const productId = parseInt(li.dataset.id, 10);
-                const newQuantity = parseInt(event.target.value, 10);
-                if (productId && newQuantity > 0) {
-                    updateItemQuantity(productId, newQuantity);
-                }
-            }
-        });
 
         summaryContainer?.addEventListener('click', (event) => {
-            if (event.target.classList.contains('summary-item-remove')) {
-                const li = event.target.closest('.summary-item');
+            const target = event.target;
+
+            // Manejar clic en el botón "Vaciar Carrito"
+            if (target.id === 'clear-cart-btn') {
+                window.showModal('Confirmar acción', '¿Estás seguro de que querés vaciar el carrito?', {
+                    confirmText: 'Sí, vaciar',
+                    onConfirm: () => {
+                        window.clearOrder?.();
+                        renderOrderSummary();
+                        window.updateCartBadge?.();
+                    }
+                });
+                return; // Terminar la ejecución aquí
+            }
+
+            // El resto de la lógica depende de estar dentro de un item del carrito
+            const li = target.closest('.cart-item');
+            if (!li) return; // Salir si el clic no fue dentro de un item
+
+            if (target.classList.contains('remove-item-btn')) {
                 const productId = parseInt(li.dataset.id, 10);
                 if (productId) {
                     removeItem(productId);
                 }
+            } else if (target.classList.contains('quantity-btn')) {
+                const productId = parseInt(li.dataset.id, 10);
+                const amount = parseInt(target.dataset.amount, 10);
+                // El tercer parámetro 'true' indica que es un cambio relativo (sumar/restar)
+                updateItemQuantity(productId, amount, true);
             }
         });
 

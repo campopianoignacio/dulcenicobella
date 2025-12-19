@@ -404,7 +404,7 @@ header .logo {
     box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
-.upload-btn svg { display: block; width: 26px; height: 26px; }
+.upload-btn svg { width: 26px; height: 26px; }
 
 @media (max-width: 480px) {
     .upload-btn { width: 48px; height: 48px; }
@@ -778,27 +778,6 @@ html, body {
     text-align: center;
 }
 
-/* Estilos para el resumen del pedido */
-#order-summary-container .cart-item {
-    padding: 15px 0;
-}
-
-#order-summary-container .cart-item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-#order-summary-container .cart-item-price {
-    font-size: 1rem;
-    font-weight: normal;
-    color: #555;
-}
-
-#order-summary-container .cart-item-controls {
-    justify-content: space-between;
-}
-
 /* Estilos para el total del pedido en la página */
 .page-order-total {
     margin-top: 25px;
@@ -844,20 +823,24 @@ html, body {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 40vh;
+    max-height: 45vh; /* Un poco más de espacio vertical */
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Espacio entre cada tarjeta de producto */
+    padding: 4px; /* Pequeño padding para que las sombras no se corten */
 }
 
 .cart-item {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.cart-item:last-child {
-    border-bottom: none;
+    /* Convertimos el item en una tarjeta */
+    background: var(--white-color);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border: 1px solid #f0f0f0;
 }
 
 .cart-item-thumbnail {
@@ -880,7 +863,9 @@ html, body {
 .cart-item-controls {
     display: flex;
     align-items: center;
-    gap: 10px;
+    flex-direction: column; /* Apila los elementos verticalmente */
+    align-items: flex-end; /* Los alinea a la derecha */
+    gap: 4px; /* Espacio entre precio y stepper */
 }
 
 .cart-item-price {
@@ -1102,5 +1087,39 @@ html, body {
     }
     50% {
         opacity: 1;
+    }
+}
+
+/* --- Animación para actualizar el precio total --- */
+.price-update {
+    animation: priceUpdate 0.5s ease-out;
+}
+
+@keyframes priceUpdate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+        color: var(--primary-color);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* --- Animación para eliminar items del carrito --- */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+        height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
     }
 }

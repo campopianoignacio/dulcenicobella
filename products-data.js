@@ -1,7 +1,7 @@
 /* Datos de productos compartidos entre páginas */
 window.DULCE_PRODUCTS = [
     { id: 1, name: 'Torta Chantilly (Precio por kg)', category: 'Tortas', description: 'Bizcochuelo de vainilla húmedo, relleno de dulce de leche y crema chantilly.', image: 'images/torta-chantilly.svg', price: 19000 },
-    { id: 2, name: 'Torta Forrada (Precio por kg)', category: 'Tortas', description: 'Elegante torta de varios pisos, forrada en fondant con detalles a elección.', image: 'images/torta-forrada.svg', price: 22000 },
+    { id: 2, name: 'Torta Forrada (Precio por kg)', category: 'Tortas', description: 'Torta con la forma que se imaginen, forrada en fondant con detalles a elección.', image: 'images/torta-forrada.svg', price: 22000 },
     { id: 3, name: 'Chajá', category: 'Postres', description: 'Clásico postre con merengue, bizcochuelo, crema y duraznos. Aproximadamente 2kg', image: 'images/postre-chaja.svg', price: 35000 },
     { id: 4, name: 'Rogel', category: 'Postres', description: 'Capas de masa crocante con abundante dulce de leche y merengue italiano. Aproximadamente 2kg', image: 'images/postre-rogel.svg', price: 35000 },
     { id: 5, name: 'Cupcakes', category: 'Candy', description: 'Cupcakes de vainilla y chocolate con crema y relleno de colores.', image: 'images/cupcakes.svg', price: 1500 },
