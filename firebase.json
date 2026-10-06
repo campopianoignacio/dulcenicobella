@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "app-dulcenicobella",
     "public": ".",
     "ignore": [
       "firebase.json",
